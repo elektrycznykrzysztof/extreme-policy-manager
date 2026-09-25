@@ -60,7 +60,7 @@ const TRANSLATIONS = {
       localConnection: "local connection", theme: "Theme", language: "Language", themeAria: "Choose color theme",
       languageAria: "Choose interface language", optional: "(optional)", noActiveConnection: "No active connection",
       expandTable: "Expand table view", closeExpanded: "Close expanded view", expandView: "Expand view", closeView: "Close view",
-      modules: "ACL Editor modules", pageTitle: "Extreme Policy Manager",
+      modules: "ACL Editor modules", pageTitle: "Extreme Policy Manager by Elektryczny Krzysztof",
     },
     connection: {
       title: "Connection", host: "Switch host / IP", port: "Port", username: "Username", authMethod: "Authentication method",
@@ -116,7 +116,7 @@ const TRANSLATIONS = {
       localConnection: "lokale Verbindung", theme: "Design", language: "Sprache", themeAria: "Farbschema auswählen",
       languageAria: "Sprache der Benutzeroberfläche auswählen", optional: "(optional)", noActiveConnection: "Keine aktive Verbindung",
       expandTable: "Tabellenansicht erweitern", closeExpanded: "Erweiterte Ansicht schließen", expandView: "Ansicht erweitern", closeView: "Ansicht schließen",
-      modules: "ACL-Editor-Module", pageTitle: "Extreme Policy Manager",
+      modules: "ACL-Editor-Module", pageTitle: "Extreme Policy Manager by Elektryczny Krzysztof",
     },
     connection: {
       title: "Verbindung", host: "Switch-Host / IP", port: "Port", username: "Benutzername", authMethod: "Authentifizierungsmethode",
@@ -172,7 +172,7 @@ const TRANSLATIONS = {
       localConnection: "lokalne połączenie", theme: "Motyw", language: "Język", themeAria: "Wybierz kolorystykę strony",
       languageAria: "Wybierz język interfejsu", optional: "(opcjonalne)", noActiveConnection: "Brak aktywnego połączenia",
       expandTable: "Rozszerz widok tabeli", closeExpanded: "Zamknij rozszerzony widok", expandView: "Rozszerz widok", closeView: "Zamknij widok",
-      modules: "Moduły ACL Editor", pageTitle: "Extreme Policy Manager",
+      modules: "Moduły ACL Editor", pageTitle: "Extreme Policy Manager by Elektryczny Krzysztof",
     },
     connection: {
       title: "Połączenie", host: "Host / IP switcha", port: "Port", username: "Użytkownik", authMethod: "Metoda uwierzytelniania",
@@ -228,7 +228,7 @@ const TRANSLATIONS = {
       localConnection: "rarlu' taH", theme: "nguv", language: "Hol", themeAria: "nguv yIwIv",
       languageAria: "Hol yIwIv", optional: "(pagh)", noActiveConnection: "rarlu'be'",
       expandTable: "pat yIvaS", closeExpanded: "pat yISoQmoH", expandView: "legh yIvaS", closeView: "legh yISoQmoH",
-      modules: "ACL mIw", pageTitle: "Extreme Policy Manager - tlhIngan Hol",
+      modules: "ACL mIw", pageTitle: "Extreme Policy Manager by Elektryczny Krzysztof - tlhIngan Hol",
     },
     connection: {
       title: "rarlu'", host: "QumwI' juH / IP", port: "lojmIt", username: "lo'wI' pong", authMethod: "yI'el mIw",

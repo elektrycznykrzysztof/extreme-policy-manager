@@ -278,4 +278,4 @@ const server = Bun.serve<TerminalSocketData>({
   },
 });
 
-console.log(`Extreme POL Viewer działa na http://${hostname}:${server.port}`);
+console.log(`Extreme Policy Manager by Elektryczny Krzysztof działa na http://${hostname}:${server.port}`);

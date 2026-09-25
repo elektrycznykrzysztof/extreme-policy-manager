@@ -1,4 +1,4 @@
-# Extreme Policy Manager
+# Extreme Policy Manager by Elektryczny Krzysztof
 
 Mała aplikacja Bun do pobierania plików `.pol` ze switcha Extreme Networks przez SSH/SFTP i prezentowania ich w czytelnej formie.
 
