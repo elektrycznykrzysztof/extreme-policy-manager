@@ -1,0 +1,15 @@
+services:
+  extreme-policy-manager:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: extreme-policy-manager:latest
+    container_name: extreme-policy-manager
+    restart: unless-stopped
+    ports:
+      - "3333:3333"
+    environment:
+      NODE_ENV: production
+      HOST: 0.0.0.0
+      PORT: 3333
+      EXPORT_TIME_ZONE: Europe/Warsaw

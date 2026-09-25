@@ -1,0 +1,173 @@
+<!doctype html>
+<html lang="pl">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="theme-color" content="#10231f" />
+    <title>Extreme Policy Manager</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/xterm@5.3.0/css/xterm.css" />
+    <link rel="stylesheet" href="/styles.css" />
+  </head>
+  <body>
+    <div class="page-shell">
+      <header class="topbar">
+        <a class="brand" href="/" aria-label="Extreme Policy Manager">
+          <span>Extreme <em>Policy</em> Manager</span>
+        </a>
+        <div class="topbar-tools">
+          <div class="topbar-status"><span class="status-dot"></span><span data-i18n="ui.localConnection">lokalne połączenie</span></div>
+          <label class="theme-picker">
+            <span data-i18n="ui.theme">Motyw</span>
+            <select id="theme-select" aria-label="Wybierz kolorystykę strony" data-i18n-aria-label="ui.themeAria">
+              <option value="forest">Forest (default)</option>
+              <option value="blue">Blue</option>
+              <option value="violet">Violet</option>
+              <option value="solarized-dark">Solarized Dark</option>
+              <option value="solarized-light">Solarized Light</option>
+              <option value="retro-future">Retro-Future</option>
+            </select>
+          </label>
+          <label class="language-picker">
+            <span data-i18n="ui.language">Język</span>
+            <select id="language-select" aria-label="Wybierz język interfejsu" data-i18n-aria-label="ui.languageAria">
+              <option value="en">EN</option>
+              <option value="de">DE</option>
+              <option value="pl">PL</option>
+              <option value="tlh">TLH · tlhIngan Hol</option>
+            </select>
+          </label>
+        </div>
+      </header>
+
+      <main>
+        <section class="workspace-grid">
+          <aside class="connection-panel panel">
+            <div class="panel-heading">
+              <div>
+                <h2 data-i18n="connection.title">Connection</h2>
+              </div>
+              <span class="lock-icon" aria-hidden="true">⌁</span>
+            </div>
+
+            <form id="connection-form">
+              <div class="field-row">
+                <label class="field">
+                  <span data-i18n="connection.host">Host / IP switcha</span>
+                  <input name="host" placeholder="10.10.10.1" autocomplete="off" required />
+                </label>
+                <label class="field field-port">
+                  <span data-i18n="connection.port">Port</span>
+                  <input name="port" type="number" value="22" min="1" max="65535" required />
+                </label>
+              </div>
+
+              <label class="field">
+                <span data-i18n="connection.username">Użytkownik</span>
+                <input name="username" placeholder="admin" autocomplete="username" required />
+              </label>
+
+              <label class="field">
+                <span data-i18n="connection.authMethod">Metoda uwierzytelniania</span>
+                <select name="authType" id="auth-type">
+                  <option value="password" data-i18n="connection.passwordAuth">Hasło SSH</option>
+                  <option value="privateKey" data-i18n="connection.privateKeyAuth">Klucz prywatny</option>
+                </select>
+              </label>
+
+              <label class="field" id="password-field">
+                <span data-i18n="connection.password">Hasło</span>
+                <input name="password" type="password" placeholder="••••••••••••" autocomplete="current-password" />
+              </label>
+
+              <label class="field hidden" id="private-key-field">
+                <span data-i18n="connection.privateKey">Klucz prywatny PEM</span>
+                <textarea name="privateKey" rows="5" placeholder="-----BEGIN OPENSSH PRIVATE KEY-----"></textarea>
+              </label>
+
+              <label class="field hidden" id="passphrase-field">
+                <span><span data-i18n="connection.passphrase">Hasło klucza</span> <small data-i18n="ui.optional">(opcjonalne)</small></span>
+                <input name="passphrase" type="password" autocomplete="off" />
+              </label>
+
+              <label class="field">
+                <span data-i18n="connection.remoteDirectory">Katalog zdalny</span>
+                <div class="input-with-icon"><span>/</span><input name="remoteDirectory" value="/usr/local/cfg" required /></div>
+                <small class="field-hint" data-i18n="connection.remoteHint">Pobierane są tylko pliki z rozszerzeniem .pol z tego katalogu.</small>
+              </label>
+
+              <button class="primary-button" type="submit" id="connect-button">
+                <span class="button-icon">↗</span><span id="connect-label" data-i18n="connection.connect">Połącz i pobierz pliki</span>
+              </button>
+              <p class="security-note"><span>♢</span> <span data-i18n="connection.security">Dane uwierzytelniające są używane tylko dla tego żądania i nie są zapisywane.</span></p>
+            </form>
+          </aside>
+
+          <section class="results-panel panel" aria-live="polite">
+            <div class="results-heading">
+              <div class="results-heading-tools">
+                <div class="result-meta" id="result-meta" data-i18n="ui.noActiveConnection">Brak aktywnego połączenia</div>
+                <button class="expand-button" type="button" id="expand-view" aria-expanded="false" title="Rozszerz widok tabeli" data-i18n-title="ui.expandTable">
+                  <span aria-hidden="true">⛶</span><span id="expand-label" data-i18n="ui.expandView">Rozszerz widok</span>
+                </button>
+              </div>
+            </div>
+
+            <div class="workspace-tabs hidden" id="workspace-tabs" role="tablist" aria-label="Moduły ACL Editor" data-i18n-aria-label="ui.modules">
+              <button class="workspace-tab active" id="policies-workspace-tab" type="button" role="tab" aria-selected="true" data-i18n="workspace.policies">Polityki</button>
+              <button class="workspace-tab" id="super-filter-workspace-tab" type="button" role="tab" aria-selected="false">Super Filter</button>
+              <button class="workspace-tab" id="terminal-workspace-tab" type="button" role="tab" aria-selected="false" data-i18n="workspace.terminal">Terminal</button>
+            </div>
+
+            <div class="empty-state" id="empty-state">
+              <div class="empty-illustration" aria-hidden="true">
+                <div class="folder-back"></div><div class="folder-front"></div><div class="folder-line"></div>
+              </div>
+              <h3 data-i18n="empty.title">Twoje pliki pojawią się tutaj</h3>
+              <p data-i18n="empty.description">Wpisz dane switcha po lewej i rozpocznij pobieranie. Zawartość plików pozostaje w tej sesji przeglądarki.</p>
+            </div>
+
+            <div class="loaded-view hidden" id="loaded-view">
+              <div class="stats-row" id="stats-row"></div>
+              <div class="browser-layout">
+                <div class="file-list-wrap">
+                  <div class="file-list-title"><span data-i18n="files.title">PLIKI .POL</span><span id="file-count">0</span></div>
+                  <div class="file-list" id="file-list"></div>
+                </div>
+                <div class="file-detail" id="file-detail">
+                  <div class="detail-placeholder" data-i18n="files.placeholder">Wybierz plik z listy, aby zobaczyć jego zawartość.</div>
+                </div>
+              </div>
+            </div>
+
+            <section class="terminal-view hidden" id="terminal-view" aria-live="polite">
+              <div class="terminal-header">
+                <div>
+                  <div class="section-kicker" data-i18n="terminal.kicker">SSH TERMINAL</div>
+                  <h2 data-i18n="terminal.title">Terminal</h2>
+                  <p id="terminal-status" data-i18n="terminal.connecting">Opening a second SSH session…</p>
+                </div>
+                <button class="terminal-reconnect" type="button" id="terminal-reconnect" data-i18n="terminal.reconnect">Reconnect</button>
+              </div>
+              <div class="terminal-container" id="terminal-container" role="application" data-i18n-aria-label="terminal.aria" aria-label="Interactive SSH terminal"></div>
+            </section>
+
+            <section class="super-filter-view hidden" id="super-filter-view" aria-live="polite"></section>
+
+            <div class="error-state hidden" id="error-state">
+              <div class="error-icon">!</div>
+              <div><h3 data-i18n="error.title">Nie udało się pobrać plików</h3><p id="error-message"></p></div>
+            </div>
+          </section>
+        </section>
+      </main>
+
+      <footer><span>EXTREME POLICY MANAGER</span><span data-i18n="footer.security">SSH credentials stay in memory only</span></footer>
+    </div>
+    <script src="https://cdn.jsdelivr.net/npm/xterm@5.3.0/lib/xterm.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/xterm-addon-fit@0.8.0/lib/xterm-addon-fit.js"></script>
+    <script type="module" src="/app.js"></script>
+  </body>
+</html>
