@@ -90,7 +90,7 @@ const TRANSLATIONS = {
       uploadSuccess: "Uploaded successfully: {name}", lastUpload: "Last upload: {name}", uploadUnknownError: "Unknown upload error.",
     },
     table: {
-      line: "LINE", name: "NAME", condition: "CONDITION", sourceAddress: "SOURCE ADDRESS", sourcePort: "SOURCE PORT",
+      line: "LINE", name: "NAME", description: "DESCRIPTION", condition: "CONDITION", sourceAddress: "SOURCE ADDRESS", sourcePort: "SOURCE PORT",
       destinationAddress: "DESTINATION ADDRESS", destinationPort: "DESTINATION PORT", protocol: "PROTOCOL", action: "ACTION", operations: "OPERATIONS",
       empty: "empty", searchPlaceholder: "Search any rule field…", searchAria: "Search in file", addAtEnd: "+ Add at end",
       addBefore: "Add rule before this row", addAfter: "Add rule after this row", delete: "Delete this rule", deleteConfirm: "Are you sure you want to delete rule “{name}”?",
@@ -146,7 +146,7 @@ const TRANSLATIONS = {
       uploadSuccess: "Erfolgreich hochgeladen: {name}", lastUpload: "Letzter Upload: {name}", uploadUnknownError: "Unbekannter Upload-Fehler.",
     },
     table: {
-      line: "ZEILE", name: "NAME", condition: "BEDINGUNG", sourceAddress: "QUELLADRESSE", sourcePort: "QUELLPORT",
+      line: "ZEILE", name: "NAME", description: "BESCHREIBUNG", condition: "BEDINGUNG", sourceAddress: "QUELLADRESSE", sourcePort: "QUELLPORT",
       destinationAddress: "ZIELADRESSE", destinationPort: "ZIELPORT", protocol: "PROTOKOLL", action: "AKTION", operations: "AKTIONEN",
       empty: "leer", searchPlaceholder: "Beliebiges Regelfeld durchsuchen…", searchAria: "Datei durchsuchen", addAtEnd: "+ Am Ende hinzufügen",
       addBefore: "Regel vor dieser Zeile hinzufügen", addAfter: "Regel nach dieser Zeile hinzufügen", delete: "Diese Regel löschen", deleteConfirm: "Möchten Sie die Regel „{name}“ wirklich löschen?",
@@ -202,7 +202,7 @@ const TRANSLATIONS = {
       uploadSuccess: "Wysłano poprawnie: {name}", lastUpload: "Ostatni upload: {name}", uploadUnknownError: "Nieznany błąd wysyłania.",
     },
     table: {
-      line: "LINIA", name: "NAZWA", condition: "WARUNEK", sourceAddress: "ADRES ŹRÓDŁOWY", sourcePort: "PORT ŹRÓDŁOWY",
+      line: "LINIA", name: "NAZWA", description: "OPIS", condition: "WARUNEK", sourceAddress: "ADRES ŹRÓDŁOWY", sourcePort: "PORT ŹRÓDŁOWY",
       destinationAddress: "ADRES DOCELOWY", destinationPort: "PORT DOCELOWY", protocol: "PROTOKÓŁ", action: "AKCJA", operations: "OPERACJE",
       empty: "puste", searchPlaceholder: "Szukaj po dowolnym polu reguły…", searchAria: "Szukaj w pliku", addAtEnd: "+ Dodaj na końcu",
       addBefore: "Dodaj regułę przed tym wierszem", addAfter: "Dodaj regułę po tym wierszu", delete: "Usuń tę regułę", deleteConfirm: "Czy na pewno usunąć regułę „{name}”?",
@@ -258,7 +258,7 @@ const TRANSLATIONS = {
       uploadSuccess: "Qapla': {name}", lastUpload: "Qapta'ghach: {name}", uploadUnknownError: "yIlelHa'lu'.",
     },
     table: {
-      line: "TLHICH", name: "PONG", condition: "meq", sourceAddress: "mung IP", sourcePort: "mung lojmIt",
+      line: "TLHICH", name: "PONG", description: "QIj", condition: "meq", sourceAddress: "mung IP", sourcePort: "mung lojmIt",
       destinationAddress: "Daq IP", destinationPort: "Daq lojmIt", protocol: "Qum mIw", action: "vang", operations: "ta'mey",
       empty: "pagh", searchPlaceholder: "pabmey Hoch yInej…", searchAria: "navDaq yInej", addAtEnd: "+ bID yIchel",
       addBefore: "pabvam tlhop yIchel", addAfter: "pabvam 'aqroS yIchel", delete: "pabvam yIteq", deleteConfirm: "pab “{name}” yIteq'a'?",
@@ -633,9 +633,12 @@ function cleanRuleValue(value) {
 function serializeRules(rules) {
   return rules.map((rule) => {
     const name = cleanRuleValue(rule.name) || "unnamed";
+    const description = cleanRuleValue(rule.description).replace(/"/g, "'");
     const conditionValue = String(rule.condition ?? "").trim().toLowerCase();
     const condition = ["if", "if match all", "if match any"].includes(conditionValue) ? conditionValue : "if";
-    const lines = [`entry ${name} {`, `    ${condition} {`];
+    const lines = [];
+    if (description) lines.push(`@description "${description}";`);
+    lines.push(`entry ${name} {`, `    ${condition} {`);
     const fields = [
       ["sourceAddress", "source-address"],
       ["destinationAddress", "destination-address"],
@@ -667,6 +670,7 @@ function createEmptyRule() {
   return {
     line: 0,
     name: "",
+    description: "",
     condition: "",
     sourceAddress: "",
     sourcePort: "",
@@ -862,12 +866,37 @@ function renderStructured() {
   }
   panel.append(structuredToolbar);
 
+  const rules = editMode ? draftRules : selectedFile.parsed.rules;
+  const descriptionHover = document.createElement("div");
+  descriptionHover.className = "rule-description-hover hidden";
+  descriptionHover.setAttribute("role", "tooltip");
+  const descriptionTitle = document.createElement("strong");
+  descriptionTitle.textContent = "@description";
+  const descriptionText = document.createElement("span");
+  descriptionHover.append(descriptionTitle, descriptionText);
+  panel.append(descriptionHover);
+
+  const positionDescriptionHover = (event) => {
+    const gap = 16;
+    descriptionHover.style.left = `${event.clientX + gap}px`;
+    descriptionHover.style.top = `${event.clientY + gap}px`;
+    const bounds = descriptionHover.getBoundingClientRect();
+    const left = event.clientX + gap + bounds.width > window.innerWidth - 12
+      ? event.clientX - bounds.width - gap
+      : event.clientX + gap;
+    const top = event.clientY + gap + bounds.height > window.innerHeight - 12
+      ? event.clientY - bounds.height - gap
+      : event.clientY + gap;
+    descriptionHover.style.left = `${Math.max(12, Math.min(left, window.innerWidth - bounds.width - 12))}px`;
+    descriptionHover.style.top = `${Math.max(12, Math.min(top, window.innerHeight - bounds.height - 12))}px`;
+  };
+
   const tableScroll = document.createElement("div");
   tableScroll.className = "rules-table-scroll";
   tableScroll.innerHTML = `
     <div class="rules-table">
       <div class="rule-grid rule-header${editMode ? " editable" : ""}">
-        <span>${t("table.line")}</span><span>${t("table.name")}</span><span>${t("table.condition")}</span><span>${t("table.sourceAddress")}</span>
+        <span>${t("table.line")}</span><span>${t("table.name")}</span>${editMode ? `<span>${t("table.description")}</span>` : ""}<span>${t("table.condition")}</span><span>${t("table.sourceAddress")}</span>
         <span>${t("table.sourcePort")}</span><span>${t("table.destinationAddress")}</span><span>${t("table.destinationPort")}</span>
         <span>${t("table.protocol")}</span><span>${t("table.action")}</span>${editMode ? `<span>${t("table.operations")}</span>` : ""}
       </div>
@@ -878,6 +907,7 @@ function renderStructured() {
   const fields = [
     ["line", t("table.line")],
     ["name", t("table.name")],
+    ...(editMode ? [["description", t("table.description")]] : []),
     ["condition", t("table.condition")],
     ["sourceAddress", t("table.sourceAddress")],
     ["sourcePort", t("table.sourcePort")],
@@ -891,13 +921,34 @@ function renderStructured() {
     rulesBody.innerHTML = "";
     const query = search.value.toLowerCase().trim();
     let visible = 0;
-    const rules = editMode ? draftRules : selectedFile.parsed.rules;
     for (const [ruleIndex, rule] of rules.entries()) {
       const searchable = Object.values(rule).join(" ").toLowerCase();
       if (query && !searchable.includes(query)) continue;
       visible += 1;
       const row = document.createElement("div");
       row.className = `rule-grid rule-row${editMode ? " editable" : ""}`;
+      const description = String(rule.description ?? "").trim();
+      row.classList.toggle("has-description", Boolean(description));
+      const showDescription = (event) => {
+        const currentDescription = String(rule.description ?? "").trim();
+        if (!currentDescription) {
+          descriptionHover.classList.add("hidden");
+          row.classList.remove("has-description");
+          return;
+        }
+        descriptionText.textContent = currentDescription;
+        row.classList.add("has-description");
+        descriptionHover.classList.remove("hidden");
+        positionDescriptionHover(event);
+      };
+      const hideDescription = () => descriptionHover.classList.add("hidden");
+      row.addEventListener("mouseenter", showDescription);
+      row.addEventListener("mousemove", (event) => {
+        if (!descriptionHover.classList.contains("hidden") && String(rule.description ?? "").trim()) {
+          positionDescriptionHover(event);
+        }
+      });
+      row.addEventListener("mouseleave", hideDescription);
       for (const [field, label] of fields) {
         const cell = document.createElement("span");
         cell.className = `rule-cell rule-${field}`;

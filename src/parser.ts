@@ -9,6 +9,7 @@ export interface ParsedLine {
 export interface PolicyRule {
   line: number;
   name: string;
+  description: string;
   condition: string;
   sourceAddress: string;
   sourcePort: string;
@@ -42,10 +43,11 @@ function cleanValue(value: string): string {
     .trim();
 }
 
-function emptyRule(line: number, name: string): PolicyRule {
+function emptyRule(line: number, name: string, description = ""): PolicyRule {
   return {
     line,
     name,
+    description,
     condition: "",
     sourceAddress: "",
     sourcePort: "",
@@ -75,8 +77,8 @@ function withoutComments(value: string): string {
     .join("\n");
 }
 
-function parseRuleBody(body: string, line: number, name: string): PolicyRule {
-  const rule = emptyRule(line, name);
+function parseRuleBody(body: string, line: number, name: string, description = ""): PolicyRule {
+  const rule = emptyRule(line, name, description);
   const cleanBody = withoutComments(body);
 
   const conditionMatch = cleanBody.match(/\bif(?:\s+match\s+(all|any))?\b/i);
@@ -143,7 +145,10 @@ export function parsePol(content: string): ParsedPolFile {
     const body = normalized.slice(openingIndex + 1, closingIndex);
     const line = normalized.slice(0, match.index ?? 0).split("\n").length;
     const name = cleanValue(match[1]);
-    rules.push(parseRuleBody(body, line, name));
+    const previousLine = sourceLines[line - 2] ?? "";
+    const descriptionMatch = previousLine.match(/^\s*@description\b\s*(.*?)\s*;?\s*$/i);
+    const description = descriptionMatch ? cleanValue(descriptionMatch[1]) : "";
+    rules.push(parseRuleBody(body, line, name, description));
   }
 
   return {
