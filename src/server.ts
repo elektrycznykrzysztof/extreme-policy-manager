@@ -1,5 +1,6 @@
 import { join, normalize, resolve, sep } from "node:path";
 import { fileURLToPath } from "node:url";
+import { DEFAULT_CLAROTY_API_URL, getClarotyDeviceDetails, validateClarotyRequest, ClarotyApiError } from "./claroty";
 import { fetchPolFiles, openInteractiveSshSession, uploadPolFile, type InteractiveSshSession, type SshRequest } from "./ssh";
 
 const root = resolve(fileURLToPath(new URL("..", import.meta.url)));
@@ -270,6 +271,41 @@ const server = Bun.serve<TerminalSocketData>({
             details: message,
           },
           502,
+        );
+      }
+    }
+
+    if (url.pathname === "/api/claroty/config") {
+      if (request.method !== "GET") return new Response("Method not allowed", { status: 405 });
+      return json({ apiUrl: DEFAULT_CLAROTY_API_URL });
+    }
+
+    if (url.pathname === "/api/claroty/device") {
+      if (request.method !== "POST") return new Response("Method not allowed", { status: 405 });
+
+      let body: unknown;
+      try {
+        body = await request.json();
+      } catch {
+        return badRequest("Nie udało się odczytać danych formularza Claroty.");
+      }
+
+      const parsed = validateClarotyRequest(body);
+      if (typeof parsed === "string") return badRequest(parsed);
+
+      try {
+        const result = await getClarotyDeviceDetails(parsed);
+        return json(result);
+      } catch (error) {
+        const message = error instanceof Error ? error.message : "Nieznany błąd API Claroty.";
+        const status = error instanceof ClarotyApiError ? error.status : 502;
+        console.error(`[Claroty] ${parsed.apiUrl}: ${message}`);
+        return json(
+          {
+            error: "Nie udało się pobrać informacji o urządzeniu z Claroty.",
+            details: message,
+          },
+          status >= 400 && status < 600 ? status : 502,
         );
       }
     }

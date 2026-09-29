@@ -115,10 +115,11 @@
               </div>
             </div>
 
-            <div class="workspace-tabs hidden" id="workspace-tabs" role="tablist" aria-label="Moduły ACL Editor" data-i18n-aria-label="ui.modules">
+            <div class="workspace-tabs" id="workspace-tabs" role="tablist" aria-label="Moduły ACL Editor" data-i18n-aria-label="ui.modules">
               <button class="workspace-tab active" id="policies-workspace-tab" type="button" role="tab" aria-selected="true" data-i18n="workspace.policies">Polityki</button>
-              <button class="workspace-tab" id="super-filter-workspace-tab" type="button" role="tab" aria-selected="false">Super Filter</button>
+              <button class="workspace-tab" id="super-filter-workspace-tab" type="button" role="tab" aria-selected="false" data-i18n="workspace.superFilter">Super Filter</button>
               <button class="workspace-tab" id="terminal-workspace-tab" type="button" role="tab" aria-selected="false" data-i18n="workspace.terminal">Terminal</button>
+              <button class="workspace-tab" id="claroty-workspace-tab" type="button" role="tab" aria-selected="false" data-i18n="workspace.claroty">Claroty</button>
             </div>
 
             <div class="empty-state" id="empty-state">
@@ -141,6 +142,46 @@
                 </div>
               </div>
             </div>
+
+            <section class="claroty-view hidden" id="claroty-view" aria-live="polite">
+              <div class="claroty-header">
+                <div>
+                  <div class="section-kicker" data-i18n="claroty.kicker">CLAROTY XDOME</div>
+                  <h2 data-i18n="claroty.title">Claroty</h2>
+                  <p data-i18n="claroty.description">Find a device by IP using the configured Claroty API User.</p>
+                </div>
+              </div>
+              <form class="claroty-form" id="claroty-form">
+                <label class="graph-filter claroty-api-field">
+                  <span data-i18n="claroty.apiUrl">API base URL</span>
+                  <input id="claroty-api-url" name="apiUrl" type="url" value="https://eu.api.medigate.io" autocomplete="off" required />
+                  <small class="field-hint" data-i18n="claroty.apiHint">The API User and Bearer token are configured on the server.</small>
+                </label>
+                <p class="claroty-auth-note" data-i18n="claroty.authNote">Authentication uses server-side Claroty API credentials.</p>
+                <label class="graph-filter">
+                  <span data-i18n="claroty.ip">Adres IP urządzenia</span>
+                  <input id="claroty-ip" name="ip" placeholder="10.10.10.25" inputmode="numeric" required />
+                </label>
+                <label class="claroty-tls-option">
+                  <input id="claroty-disable-tls" name="disableTls" type="checkbox" value="true" />
+                  <span>
+                    <span data-i18n="claroty.disableTls">Disable TLS certificate verification</span>
+                    <small class="field-hint" data-i18n="claroty.tlsHint">Use only for a trusted endpoint with a certificate problem.</small>
+                  </span>
+                </label>
+                <button class="primary-button claroty-search" type="submit" id="claroty-search-button">
+                  <span class="button-icon">⌕</span><span data-i18n="claroty.search">Pobierz informacje</span>
+                </button>
+              </form>
+              <div class="claroty-status hidden" id="claroty-status"></div>
+              <div class="claroty-results hidden" id="claroty-results">
+                <div class="claroty-result-heading">
+                  <strong data-i18n="claroty.resultTitle">Device details</strong>
+                  <span id="claroty-result-meta"></span>
+                </div>
+                <div id="claroty-device-list"></div>
+              </div>
+            </section>
 
             <section class="terminal-view hidden" id="terminal-view" aria-live="polite">
               <div class="terminal-header">

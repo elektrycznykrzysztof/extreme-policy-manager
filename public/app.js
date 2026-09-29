@@ -21,8 +21,17 @@ const workspaceTabs = document.querySelector("#workspace-tabs");
 const policiesWorkspaceTab = document.querySelector("#policies-workspace-tab");
 const superFilterWorkspaceTab = document.querySelector("#super-filter-workspace-tab");
 const terminalWorkspaceTab = document.querySelector("#terminal-workspace-tab");
+const clarotyWorkspaceTab = document.querySelector("#claroty-workspace-tab");
 const superFilterView = document.querySelector("#super-filter-view");
 const terminalView = document.querySelector("#terminal-view");
+const clarotyView = document.querySelector("#claroty-view");
+const clarotyForm = document.querySelector("#claroty-form");
+const clarotyApiUrlInput = document.querySelector("#claroty-api-url");
+const clarotySearchButton = document.querySelector("#claroty-search-button");
+const clarotyStatus = document.querySelector("#claroty-status");
+const clarotyResults = document.querySelector("#claroty-results");
+const clarotyResultMeta = document.querySelector("#claroty-result-meta");
+const clarotyDeviceList = document.querySelector("#claroty-device-list");
 const terminalContainer = document.querySelector("#terminal-container");
 const terminalStatus = document.querySelector("#terminal-status");
 const terminalReconnect = document.querySelector("#terminal-reconnect");
@@ -42,6 +51,7 @@ let terminalFitAddon = null;
 let terminalState = "idle";
 let terminalConnectionAttempt = 0;
 let terminalFitFrame = 0;
+let clarotyState = { apiUrl: "https://eu.api.medigate.io", ip: "", payload: null, devices: [] };
 
 const THEME_STORAGE_KEY = "acl-editor-theme";
 const THEME_VALUES = new Set(["forest", "blue", "violet", "solarized-dark", "solarized-light", "retro-future"]);
@@ -68,11 +78,17 @@ const TRANSLATIONS = {
       passphrase: "Key passphrase", remoteDirectory: "Remote directory", remoteHint: "Only .pol files are fetched from this directory.",
       connect: "Connect and fetch files", connecting: "Connecting to switch…", security: "Credentials are used only for this request and are not stored.",
     },
-    workspace: { policies: "Policies", superFilter: "Super Filter", terminal: "Terminal" },
+    workspace: { policies: "Policies", superFilter: "Super Filter", terminal: "Terminal", claroty: "Claroty" },
     terminal: {
       kicker: "SSH TERMINAL", title: "Terminal", connecting: "Opening a second SSH session…", connected: "Connected to the switch via a separate SSH session.",
       reconnecting: "Reconnecting…", reconnect: "Reconnect", disconnected: "SSH terminal session closed.", unavailable: "xterm.js could not be loaded.",
       aria: "Interactive SSH terminal", connectionError: "Could not open the SSH terminal session.",
+    },
+    claroty: {
+      kicker: "CLAROTY XDOME", title: "Claroty", description: "Find a device by IP using the configured Claroty API User.",
+      apiUrl: "API base URL", apiHint: "The API User and Bearer token are configured on the server.", authNote: "Authentication uses server-side Claroty API credentials.", disableTls: "Disable TLS certificate verification", tlsHint: "Use only for a trusted endpoint with a certificate problem.",
+      ip: "Device IP address", search: "Get device details", resultTitle: "Device details", searching: "Loading device details…",
+      found: "{count} device(s) returned", noResults: "No device with this IP was found.", apiError: "Claroty request failed.", configError: "Claroty API credentials are not configured on the server.",
     },
     empty: { title: "Your files will appear here", description: "Enter switch details on the left to begin downloading. File contents stay in this browser session." },
     files: { title: "POL FILES", placeholder: "Select a file from the list to view its contents.", noFiles: "No .pol files in this directory.", noDate: "no date", rules: "{count} rules" },
@@ -124,11 +140,17 @@ const TRANSLATIONS = {
       passphrase: "Passphrase des Schlüssels", remoteDirectory: "Entferntes Verzeichnis", remoteHint: "Aus diesem Verzeichnis werden nur .pol-Dateien abgerufen.",
       connect: "Verbinden und Dateien abrufen", connecting: "Verbindung zum Switch wird hergestellt…", security: "Anmeldedaten werden nur für diese Anfrage verwendet und nicht gespeichert.",
     },
-    workspace: { policies: "Richtlinien", superFilter: "Super Filter", terminal: "Terminal" },
+    workspace: { policies: "Richtlinien", superFilter: "Super Filter", terminal: "Terminal", claroty: "Claroty" },
     terminal: {
       kicker: "SSH-TERMINAL", title: "Terminal", connecting: "Eine zweite SSH-Sitzung wird geöffnet…", connected: "Über eine separate SSH-Sitzung mit dem Switch verbunden.",
       reconnecting: "Verbindung wird wiederhergestellt…", reconnect: "Erneut verbinden", disconnected: "Die SSH-Terminalsitzung wurde geschlossen.", unavailable: "xterm.js konnte nicht geladen werden.",
       aria: "Interaktives SSH-Terminal", connectionError: "Die SSH-Terminalsitzung konnte nicht geöffnet werden.",
+    },
+    claroty: {
+      kicker: "CLAROTY XDOME", title: "Claroty", description: "Suchen Sie ein Gerät per IP mit dem konfigurierten Claroty-API-User.",
+      apiUrl: "API-Basis-URL", apiHint: "API-User und Bearer-Token werden auf dem Server konfiguriert.", authNote: "Die Authentifizierung verwendet die serverseitigen Claroty-API-Zugangsdaten.", disableTls: "TLS-Zertifikatsprüfung deaktivieren", tlsHint: "Nur für einen vertrauenswürdigen Endpunkt mit Zertifikatsproblem verwenden.",
+      ip: "IP-Adresse des Geräts", search: "Gerätedaten abrufen", resultTitle: "Gerätedetails", searching: "Gerätedetails werden geladen…",
+      found: "{count} Gerät(e) gefunden", noResults: "Kein Gerät mit dieser IP-Adresse gefunden.", apiError: "Die Claroty-Anfrage ist fehlgeschlagen.", configError: "Die Claroty-API-Zugangsdaten sind auf dem Server nicht konfiguriert.",
     },
     empty: { title: "Ihre Dateien werden hier angezeigt", description: "Geben Sie links die Switch-Daten ein, um den Abruf zu starten. Die Dateiinhalte bleiben in dieser Browsersitzung." },
     files: { title: "POL-DATEIEN", placeholder: "Wählen Sie eine Datei aus, um ihren Inhalt anzuzeigen.", noFiles: "Keine .pol-Dateien in diesem Verzeichnis.", noDate: "kein Datum", rules: "{count} Regeln" },
@@ -180,11 +202,17 @@ const TRANSLATIONS = {
       passphrase: "Hasło klucza", remoteDirectory: "Katalog zdalny", remoteHint: "Pobierane są tylko pliki z rozszerzeniem .pol z tego katalogu.",
       connect: "Połącz i pobierz pliki", connecting: "Łączenie ze switchem…", security: "Dane uwierzytelniające są używane tylko dla tego żądania i nie są zapisywane.",
     },
-    workspace: { policies: "Polityki", superFilter: "Super Filter", terminal: "Terminal" },
+    workspace: { policies: "Polityki", superFilter: "Super Filter", terminal: "Terminal", claroty: "Claroty" },
     terminal: {
       kicker: "TERMINAL SSH", title: "Terminal", connecting: "Otwieranie drugiej sesji SSH…", connected: "Połączono ze switchem przez oddzielną sesję SSH.",
       reconnecting: "Ponowne łączenie…", reconnect: "Połącz ponownie", disconnected: "Sesja terminala SSH została zamknięta.", unavailable: "Nie udało się załadować xterm.js.",
       aria: "Interaktywny terminal SSH", connectionError: "Nie udało się otworzyć sesji terminala SSH.",
+    },
+    claroty: {
+      kicker: "CLAROTY XDOME", title: "Claroty", description: "Wyszukaj urządzenie po IP przy użyciu skonfigurowanego API User Claroty.",
+      apiUrl: "Bazowy adres API", apiHint: "API User i token Bearer są skonfigurowane na serwerze.", authNote: "Uwierzytelnianie korzysta z danych API Claroty skonfigurowanych po stronie serwera.", disableTls: "Wyłącz weryfikację certyfikatu TLS", tlsHint: "Używaj tylko dla zaufanego endpointu z problemem certyfikatu.",
+      ip: "Adres IP urządzenia", search: "Pobierz informacje", resultTitle: "Informacje o urządzeniu", searching: "Pobieranie informacji o urządzeniu…",
+      found: "Zwrócono urządzeń: {count}", noResults: "Nie znaleziono urządzenia z tym adresem IP.", apiError: "Żądanie do Claroty nie powiodło się.", configError: "Dane API Claroty nie są skonfigurowane na serwerze.",
     },
     empty: { title: "Twoje pliki pojawią się tutaj", description: "Wpisz dane switcha po lewej i rozpocznij pobieranie. Zawartość plików pozostaje w tej sesji przeglądarki." },
     files: { title: "PLIKI .POL", placeholder: "Wybierz plik z listy, aby zobaczyć jego zawartość.", noFiles: "Brak plików .pol w tym katalogu.", noDate: "brak daty", rules: "{count} reguł" },
@@ -236,11 +264,17 @@ const TRANSLATIONS = {
       passphrase: "pegh mu' bIH", remoteDirectory: "Hop Daq", remoteHint: "Daqvamvo' .pol nav neH yIlel.",
       connect: "yIrarlu' 'ej nav yIlel", connecting: "QumwI'vaD rarlu'…", security: "peghmeyvam neH lo'lu'; polHa'lu'be'.",
     },
-    workspace: { policies: "pabmey", superFilter: "Super wIv", terminal: "Qum Daq" },
+    workspace: { policies: "pabmey", superFilter: "Super wIv", terminal: "Qum Daq", claroty: "Claroty" },
     terminal: {
       kicker: "SSH QUM DAQ", title: "Qum Daq", connecting: "cha'DIch SSH rarlu'…", connected: "QumwI'vaD latlh SSH rarlu'.",
       reconnecting: "rarlu'qa'…", reconnect: "rarlu'qa'", disconnected: "SSH Qum Daq mej.", unavailable: "xterm.js luj.",
       aria: "SSH Qum Daq jI'IjlaH", connectionError: "SSH Qum Daq vIchenmoHlaHbe'.",
+    },
+    claroty: {
+      kicker: "CLAROTY XDOME", title: "Claroty", description: "Claroty API User yIlo' 'ej IP yInej.",
+      apiUrl: "API base URL", apiHint: "API User 'ej Bearer token server-Daq lutu'lu'.", authNote: "Claroty API peghmey server-Daq neH lulo'lu'.", disableTls: "TLS cert yI'olHa'", tlsHint: "cert pIm tu'lu'chugh neH yIlo'.",
+      ip: "lo'laHghach IP", search: "lo'laHghach De' yIlel", resultTitle: "lo'laHghach De'", searching: "lo'laHghach De' luttaH…",
+      found: "lo'laHghach: {count}", noResults: "IPvam lo'laHghach tu'lu'be'.", apiError: "Claroty request Qapbe'.", configError: "Claroty API peghmey server-Daq lutu'lu'be'.",
     },
     empty: { title: "navmeylIj naQaq", description: "poS DaqDaq QumwI' De' yIghItlh. vaj navmey yIlel. DaH peghmey bIH neH." },
     files: { title: "POL NAVMEY", placeholder: "nav yIwIv 'ej yIlaD.", noFiles: "pagh .pol nav DaqvamDaq.", noDate: "poH pagh", rules: "{count} pabmey" },
@@ -306,6 +340,11 @@ const SERVER_ERROR_PREFIXES = [
   ["Nie udało się odczytać danych wysyłanego pliku.", "error.readUpload"],
   ["Nie udało się pobrać plików. Sprawdź host, dane logowania, katalog i to, czy switch udostępnia SFTP.", "error.fetch"],
   ["Nie udało się wysłać zaktualizowanej polityki. Sprawdź uprawnienia SFTP i katalog zdalny.", "error.upload"],
+  ["Nieprawidłowe dane formularza Claroty.", "claroty.apiError"],
+  ["Podaj poprawny adres IP urządzenia.", "claroty.ip"],
+  ["Adres API Claroty jest nieprawidłowy.", "claroty.apiUrl"],
+  ["Brak CLAROTY_API_USER w zmiennych środowiskowych.", "claroty.configError"],
+  ["Brak CLAROTY_API_TOKEN w zmiennych środowiskowych.", "claroty.configError"],
 ];
 
 function localizeServerError(message) {
@@ -348,6 +387,7 @@ function applyLanguage(language, persist = true) {
     renderFileList();
     renderDetail();
   }
+  if (clarotyState.payload) renderClarotyResults(clarotyState.devices);
   if (!errorState.classList.contains("hidden") && lastErrorMessage) {
     errorMessage.textContent = localizeServerError(lastErrorMessage);
   }
@@ -389,18 +429,148 @@ try {
 applyTheme(savedTheme, false);
 themeSelect.addEventListener("change", () => applyTheme(themeSelect.value));
 
+async function loadClarotyConfig() {
+  if (!clarotyApiUrlInput) return;
+  try {
+    const response = await fetch("/api/claroty/config", { headers: { Accept: "application/json" } });
+    if (!response.ok) return;
+    const config = await response.json();
+    if (typeof config.apiUrl !== "string" || !config.apiUrl.trim()) return;
+    clarotyApiUrlInput.value = config.apiUrl;
+    clarotyState.apiUrl = config.apiUrl;
+  } catch {
+    // Keep the safe client-side default if the configuration endpoint is unavailable.
+  }
+}
+
+void loadClarotyConfig();
+
+function createClarotyValue(value, depth = 0) {
+  if (value === null || value === undefined || value === "") {
+    const empty = document.createElement("span");
+    empty.className = "claroty-empty-value";
+    empty.textContent = "—";
+    return empty;
+  }
+  if (typeof value !== "object" || depth > 8) {
+    const text = document.createElement("span");
+    text.className = "claroty-scalar-value";
+    text.textContent = depth > 8 ? "[…]" : String(value);
+    return text;
+  }
+
+  if (Array.isArray(value)) {
+    const list = document.createElement("div");
+    list.className = "claroty-value-list";
+    if (!value.length) {
+      list.textContent = "—";
+      return list;
+    }
+    value.forEach((item, index) => {
+      const itemElement = document.createElement("div");
+      itemElement.className = "claroty-list-item";
+      const indexLabel = document.createElement("span");
+      indexLabel.className = "claroty-list-index";
+      indexLabel.textContent = `[${index}]`;
+      itemElement.append(indexLabel, createClarotyValue(item, depth + 1));
+      list.append(itemElement);
+    });
+    return list;
+  }
+
+  const fields = document.createElement("div");
+  fields.className = "claroty-fields";
+  Object.entries(value).forEach(([key, nestedValue]) => {
+    const row = document.createElement("div");
+    row.className = "claroty-field-row";
+    const name = document.createElement("span");
+    name.className = "claroty-field-name";
+    name.textContent = key;
+    row.append(name, createClarotyValue(nestedValue, depth + 1));
+    fields.append(row);
+  });
+  return fields;
+}
+
+function renderClarotyResults(devices) {
+  if (!clarotyResults || !clarotyResultMeta || !clarotyDeviceList) return;
+  clarotyResults.classList.remove("hidden");
+  clarotyResultMeta.textContent = t("claroty.found", { count: devices.length });
+  clarotyDeviceList.innerHTML = "";
+  if (!devices.length) {
+    const empty = document.createElement("p");
+    empty.className = "claroty-no-results";
+    empty.textContent = t("claroty.noResults");
+    clarotyDeviceList.append(empty);
+    return;
+  }
+
+  devices.forEach((device, index) => {
+    const card = document.createElement("article");
+    card.className = "claroty-device-card";
+    const title = document.createElement("h3");
+    title.textContent = `${t("claroty.title")} · ${index + 1}`;
+    card.append(title, createClarotyValue(device));
+    clarotyDeviceList.append(card);
+  });
+}
+
+function setClarotyStatus(message, kind = "info") {
+  if (!clarotyStatus) return;
+  clarotyStatus.textContent = message;
+  clarotyStatus.className = `claroty-status claroty-status-${kind}`;
+  clarotyStatus.classList.remove("hidden");
+}
+
+if (clarotyForm) {
+  clarotyForm.addEventListener("submit", async (event) => {
+    event.preventDefault();
+    const formData = Object.fromEntries(new FormData(clarotyForm).entries());
+    clarotySearchButton.disabled = true;
+    clarotyResults?.classList.add("hidden");
+    setClarotyStatus(t("claroty.searching"), "info");
+    try {
+      const response = await fetch("/api/claroty/device", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(formData),
+      });
+      const data = await response.json();
+      if (!response.ok) throw new Error(data.details ? `${data.error} (${data.details})` : data.error);
+      clarotyState = {
+        apiUrl: String(formData.apiUrl || ""),
+        ip: String(formData.ip || ""),
+        payload: data.payload ?? null,
+        devices: Array.isArray(data.devices) ? data.devices : [],
+      };
+      renderClarotyResults(clarotyState.devices);
+      setClarotyStatus(t("claroty.found", { count: clarotyState.devices.length }), "success");
+    } catch (error) {
+      setClarotyStatus(error instanceof Error ? error.message : t("claroty.apiError"), "error");
+    } finally {
+      clarotySearchButton.disabled = false;
+    }
+  });
+}
+
 function setWorkspaceTab(tabName) {
   const superFilter = tabName === "super-filter";
   const terminal = tabName === "terminal";
-  policiesWorkspaceTab.classList.toggle("active", !superFilter && !terminal);
+  const claroty = tabName === "claroty";
+  const policies = !superFilter && !terminal && !claroty;
+  policiesWorkspaceTab.classList.toggle("active", policies);
   superFilterWorkspaceTab.classList.toggle("active", superFilter);
   terminalWorkspaceTab.classList.toggle("active", terminal);
-  policiesWorkspaceTab.setAttribute("aria-selected", String(!superFilter && !terminal));
+  clarotyWorkspaceTab.classList.toggle("active", claroty);
+  policiesWorkspaceTab.setAttribute("aria-selected", String(policies));
   superFilterWorkspaceTab.setAttribute("aria-selected", String(superFilter));
   terminalWorkspaceTab.setAttribute("aria-selected", String(terminal));
-  loadedView.classList.toggle("hidden", superFilter || terminal);
+  clarotyWorkspaceTab.setAttribute("aria-selected", String(claroty));
+  loadedView.classList.toggle("hidden", !policies || !files.length);
+  emptyState.classList.toggle("hidden", !policies || Boolean(files.length));
   superFilterView.classList.toggle("hidden", !superFilter);
   terminalView.classList.toggle("hidden", !terminal);
+  clarotyView.classList.toggle("hidden", !claroty);
   if (superFilter && !superFilterInitialized) renderSuperFilterView();
   if (terminal) {
     initializeTerminal();
@@ -412,6 +582,7 @@ function setWorkspaceTab(tabName) {
 policiesWorkspaceTab.addEventListener("click", () => setWorkspaceTab("policies"));
 superFilterWorkspaceTab.addEventListener("click", () => setWorkspaceTab("super-filter"));
 terminalWorkspaceTab.addEventListener("click", () => setWorkspaceTab("terminal"));
+clarotyWorkspaceTab.addEventListener("click", () => setWorkspaceTab("claroty"));
 
 function refreshTerminalLabels() {
   if (!terminalStatus || !terminalReconnect) return;

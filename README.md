@@ -49,6 +49,8 @@ docker compose down
 10. W prawym górnym rogu można zmienić motyw interfejsu: Forest, Blue, Violet, Solarized Dark, Solarized Light lub Retro-Future. Wybrany motyw jest zapamiętywany lokalnie w przeglądarce.
 11. Obok motywu dostępny jest wybór języka interfejsu `EN`, `DE`, `PL`. Tłumaczone są również widoki generowane dynamicznie, takie jak edycja reguł, mapa połączeń i Super Filter.
 12. Zakładka „Terminal” otwiera po udanym logowaniu drugą, interaktywną sesję SSH przez xterm.js. Sesja terminala działa niezależnie od połączenia używanego do SFTP i pobierania polityk.
+13. Zakładka „Claroty” korzysta z API User i tokenu Bearer wygenerowanego w Claroty. Ustaw `CLAROTY_API_USER` oraz `CLAROTY_API_TOKEN` w lokalnym pliku `.env` (na podstawie `.env.example`). Token jest używany wyłącznie po stronie backendu i nie trafia do przeglądarki ani logów. Backend wywołuje `POST /api/v1/devices/` z filtrem `ip_list` oraz wymaganym zestawem pól urządzenia, a zwrócone dane prezentuje jako czytelne pola i zagnieżdżone listy. Bazowy adres API można zmienić przez `CLAROTY_API_URL`.
+14. W zakładce „Claroty” dostępna jest opcja „Wyłącz weryfikację certyfikatu TLS”. Jest domyślnie wyłączona i powinna być używana tylko dla zaufanego endpointu z problemem certyfikatu. Wyłączenie działa wyłącznie dla pojedynczego żądania.
 
 Hasło lub klucz prywatny nie są zapisywane na dysku ani w localStorage. W produkcji aplikację należy uruchomić za HTTPS i ograniczyć dostęp do niej do sieci administracyjnej.
 

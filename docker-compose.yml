@@ -13,3 +13,6 @@ services:
       HOST: 0.0.0.0
       PORT: 3333
       EXPORT_TIME_ZONE: Europe/Warsaw
+      CLAROTY_API_URL: ${CLAROTY_API_URL:-https://eu.api.medigate.io}
+      CLAROTY_API_USER: ${CLAROTY_API_USER:-}
+      CLAROTY_API_TOKEN: ${CLAROTY_API_TOKEN:-}
